@@ -16,37 +16,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Revisar que el ZIP este subido
-        id: zip
-        run: |
-          if [ -f VolumenPlus.zip ]; then echo "ok=true" >> $GITHUB_OUTPUT; else echo "Falta VolumenPlus.zip"; echo "ok=false" >> $GITHUB_OUTPUT; fi
-
       - uses: actions/setup-java@v4
-        if: steps.zip.outputs.ok == 'true'
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-        if: steps.zip.outputs.ok == 'true'
-
       - name: Compilar
-        if: steps.zip.outputs.ok == 'true'
         run: |
           unzip -q VolumenPlus.zip
           cd VolumenPlus
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk ../VolumenPlus.apk
 
       - uses: actions/upload-artifact@v4
-        if: steps.zip.outputs.ok == 'true'
         with:
           name: VolumenPlus
           path: VolumenPlus.apk
 
       - name: Publicar en Releases
-        if: steps.zip.outputs.ok == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
